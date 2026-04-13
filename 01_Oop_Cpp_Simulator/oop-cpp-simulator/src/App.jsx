@@ -13,25 +13,37 @@ export default function App() {
   ];
   // Thêm đoạn này vào bên trong function App(), ngay trước dòng return
   useEffect(() => {
+    let lastHeight = 0; // Biến lưu trạng thái cũ (giống biến Static trong C)
+
     const sendHeight = () => {
-      // Đo chiều cao toàn bộ body của app
-      const height = document.body.scrollHeight;
-      // Gửi tín hiệu ra ngoài (cho iframe cha)
-      window.parent.postMessage({ frameHeight: height }, '*');
+      // Lấy đúng thẻ div chứa nội dung thực tế (ID 'root' do Vite tạo)
+      const rootElement = document.getElementById('root');
+      if (!rootElement) return;
+
+      const currentHeight = rootElement.offsetHeight;
+
+      // Ngưỡng Hysteresis: Chỉ cập nhật nếu chênh lệch > 5px 
+      // (Tránh vòng lặp nhiễu pixel giữa iframe và nội dung)
+      if (Math.abs(currentHeight - lastHeight) > 5) {
+        lastHeight = currentHeight;
+        window.parent.postMessage({ frameHeight: currentHeight }, '*');
+      }
     };
 
-    // Gửi chiều cao ngay khi load xong
-    sendHeight();
+    // Delay 1 chút lúc mới load để render CSS xong xuôi
+    setTimeout(sendHeight, 100);
 
-    // Tạo một bộ theo dõi (Observer) để gửi lại chiều cao nếu nội dung thay đổi
-    // (ví dụ khi bạn bấm chuyển qua lại giữa các tab)
+    // Chỉ theo dõi nội dung của '#root', không theo dõi 'document.body'
     const observer = new ResizeObserver(sendHeight);
-    observer.observe(document.body);
+    const rootElement = document.getElementById('root');
+    if (rootElement) {
+      observer.observe(rootElement);
+    }
 
     return () => observer.disconnect();
   }, []);
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-4 md:p-8">
+    <div className="h-fit pb-8 bg-slate-900 text-slate-100 font-sans p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         <header className="mb-8 text-center">
           <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 mb-2">
