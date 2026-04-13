@@ -11,7 +11,25 @@ export default function App() {
     { id: 'polymorphism', name: 'Đa hình (Polymorphism)', icon: <Network size={18} /> },
     { id: 'abstraction', name: 'Trừu tượng (Abstraction)', icon: <EyeOff size={18} /> },
   ];
+  // Thêm đoạn này vào bên trong function App(), ngay trước dòng return
+  useEffect(() => {
+    const sendHeight = () => {
+      // Đo chiều cao toàn bộ body của app
+      const height = document.body.scrollHeight;
+      // Gửi tín hiệu ra ngoài (cho iframe cha)
+      window.parent.postMessage({ frameHeight: height }, '*');
+    };
 
+    // Gửi chiều cao ngay khi load xong
+    sendHeight();
+
+    // Tạo một bộ theo dõi (Observer) để gửi lại chiều cao nếu nội dung thay đổi
+    // (ví dụ khi bạn bấm chuyển qua lại giữa các tab)
+    const observer = new ResizeObserver(sendHeight);
+    observer.observe(document.body);
+
+    return () => observer.disconnect();
+  }, []);
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
