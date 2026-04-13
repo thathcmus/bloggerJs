@@ -13,37 +13,21 @@ export default function App() {
   ];
   // Thêm đoạn này vào bên trong function App(), ngay trước dòng return
   useEffect(() => {
-    let lastHeight = 0; // Biến lưu trạng thái cũ (giống biến Static trong C)
-
-    const sendHeight = () => {
-      // Lấy đúng thẻ div chứa nội dung thực tế (ID 'root' do Vite tạo)
-      const rootElement = document.getElementById('root');
-      if (!rootElement) return;
-
-      const currentHeight = rootElement.offsetHeight;
-
-      // Ngưỡng Hysteresis: Chỉ cập nhật nếu chênh lệch > 5px 
-      // (Tránh vòng lặp nhiễu pixel giữa iframe và nội dung)
-      if (Math.abs(currentHeight - lastHeight) > 5) {
-        lastHeight = currentHeight;
-        window.parent.postMessage({ frameHeight: currentHeight }, '*');
+    // Đợi 100ms để React vẽ (render) xong giao diện của tab mới
+    const timer = setTimeout(() => {
+      // Chỉ đo chiều cao của phần tử chứa nội dung thực tế, bỏ qua body/html
+      const appWrapper = document.getElementById('oop-app-wrapper');
+      if (appWrapper) {
+        const realHeight = appWrapper.scrollHeight;
+        // Gửi tín hiệu báo chiều cao
+        window.parent.postMessage({ frameHeight: realHeight }, '*');
       }
-    };
+    }, 100);
 
-    // Delay 1 chút lúc mới load để render CSS xong xuôi
-    setTimeout(sendHeight, 100);
-
-    // Chỉ theo dõi nội dung của '#root', không theo dõi 'document.body'
-    const observer = new ResizeObserver(sendHeight);
-    const rootElement = document.getElementById('root');
-    if (rootElement) {
-      observer.observe(rootElement);
-    }
-
-    return () => observer.disconnect();
-  }, []);
+    return () => clearTimeout(timer);
+  }, [activeTab]); // <-- KEY LÀ CHỖ NÀY: Chỉ chạy ngắt khi biến activeTab thay đổi!
   return (
-    <div className="h-fit pb-8 bg-slate-900 text-slate-100 font-sans p-4 md:p-8">
+    <div id="oop-app-wrapper" className="h-fit bg-slate-950 text-slate-200 font-sans p-4 md:p-8 flex flex-col items-center overflow-hidden">
       <div className="max-w-6xl mx-auto">
         <header className="mb-8 text-center">
           <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400 mb-2">
